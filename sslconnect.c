@@ -4,7 +4,7 @@
  *              retrieving the server certificate               *
  * author:      06/12/2012 Frank4DD                             *
  *                                                              *
- * gcc -lssl -lcrypto -o sslconnect sslconnect.c                *
+ * compile:     gcc -o sslconnect sslconnect.c -lssl -lcrypto   *
  * ------------------------------------------------------------ */
 
 #include <sys/socket.h>
@@ -21,15 +21,18 @@
 #include <openssl/x509.h>
 #include <openssl/x509_vfy.h>
 
+#define MAX_DEST_SIZE 255
+
 /* ---------------------------------------------------------- *
  * First we need to make a standard TCP socket connection.    *
  * create_socket() creates a socket & TCP-connects to server. *
  * ---------------------------------------------------------- */
-int create_socket(char[], BIO *);
+int create_socket(char* hostname, int port, BIO* bio);
 
-int main() {
+int main(int argc, char** argv)
+{
 
-  char           dest_url[] = "https://www.hp.com";
+  char            *dest_url = NULL;
   BIO              *certbio = NULL;
   BIO               *outbio = NULL;
   X509                *cert = NULL;
@@ -39,6 +42,22 @@ int main() {
   SSL *ssl;
   int server = 0;
   int ret, i;
+  int port = 443;
+
+  if (argc < 2)
+  {
+    printf("usage: %s <host [port]>\n", argv[0]);
+    return 0;
+  }
+
+  dest_url = argv[1];
+
+  if (argc > 2)
+  {
+     port = htonl(strtoul(argv[2], NULL, 16));
+  }
+
+  printf("Connecting to %s:%d\n", dest_url, port);
 
   /* ---------------------------------------------------------- *
    * These function calls initialize openssl for correct work.  *
@@ -84,7 +103,7 @@ int main() {
   /* ---------------------------------------------------------- *
    * Make the underlying TCP socket connection                  *
    * ---------------------------------------------------------- */
-  server = create_socket(dest_url, outbio);
+  server = create_socket(dest_url, port, outbio);
   if(server != 0)
     BIO_printf(outbio, "Successfully made the TCP connection to: %s.\n", dest_url);
 
@@ -137,43 +156,12 @@ int main() {
 /* ---------------------------------------------------------- *
  * create_socket() creates the socket & TCP-connect to server *
  * ---------------------------------------------------------- */
-int create_socket(char url_str[], BIO *out) {
+int create_socket(char *hostname, int port, BIO *out) {
   int sockfd;
-  char hostname[256] = "";
-  char    portnum[6] = "443";
   char      proto[6] = "";
   char      *tmp_ptr = NULL;
-  int           port;
   struct hostent *host;
   struct sockaddr_in dest_addr;
-
-  /* ---------------------------------------------------------- *
-   * Remove the final / from url_str, if there is one           *
-   * ---------------------------------------------------------- */
-  if(url_str[strlen(url_str)] == '/')
-    url_str[strlen(url_str)] = '\0';
-
-  /* ---------------------------------------------------------- *
-   * the first : ends the protocol string, i.e. http            *
-   * ---------------------------------------------------------- */
-  strncpy(proto, url_str, (strchr(url_str, ':')-url_str));
-
-  /* ---------------------------------------------------------- *
-   * the hostname starts after the "://" part                   *
-   * ---------------------------------------------------------- */
-  strncpy(hostname, strstr(url_str, "://")+3, sizeof(hostname));
-
-  /* ---------------------------------------------------------- *
-   * if the hostname contains a colon :, we got a port number   *
-   * ---------------------------------------------------------- */
-  if(strchr(hostname, ':')) {
-    tmp_ptr = strchr(hostname, ':');
-    /* the last : starts the port number, if avail, i.e. 8443 */
-    strncpy(portnum, tmp_ptr+1,  sizeof(portnum));
-    *tmp_ptr = '\0';
-  }
-
-  port = atoi(portnum);
 
   if ( (host = gethostbyname(hostname)) == NULL ) {
     BIO_printf(out, "Error: Cannot resolve hostname %s.\n",  hostname);
