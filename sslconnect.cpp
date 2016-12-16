@@ -13,7 +13,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
-
+#include <unistd.h>
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 
   if (argc > 2)
   {
-     port = htonl(strtoul(argv[2], NULL, 16));
+      port = strtol(argv[2], NULL, 0);
   }
 
   printf("Connecting to %s:%d\n", dest_url, port);
