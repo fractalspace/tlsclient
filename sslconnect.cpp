@@ -77,7 +77,9 @@ int main(int argc, char** argv)
    * initialize SSL library and register algorithms             *
    * ---------------------------------------------------------- */
   if(SSL_library_init() < 0)
+  {
     BIO_printf(outbio, "Could not initialize the OpenSSL library !\n");
+  }
 
   /* ---------------------------------------------------------- *
    * Set SSLv2 client hello, also announce SSLv3 and TLSv1      *
@@ -87,8 +89,10 @@ int main(int argc, char** argv)
   /* ---------------------------------------------------------- *
    * Try to create a new SSL context                            *
    * ---------------------------------------------------------- */
-  if ( (ctx = SSL_CTX_new(method)) == NULL)
+  if ((ctx = SSL_CTX_new(method)) == NULL)
+  {
     BIO_printf(outbio, "Unable to create a new SSL context structure.\n");
+  }
 
   /* ---------------------------------------------------------- *
    * Disabling SSLv2 will leave v3 and TSLv1 for negotiation    *
@@ -105,7 +109,9 @@ int main(int argc, char** argv)
    * ---------------------------------------------------------- */
   server = create_socket(dest_url, port, outbio);
   if(server != 0)
+  {
     BIO_printf(outbio, "Successfully made the TCP connection to: %s.\n", dest_url);
+  }
 
   /* ---------------------------------------------------------- *
    * Attach the SSL session to the socket descriptor            *
@@ -115,19 +121,27 @@ int main(int argc, char** argv)
   /* ---------------------------------------------------------- *
    * Try to SSL-connect here, returns 1 for success             *
    * ---------------------------------------------------------- */
-  if ( SSL_connect(ssl) != 1 )
+  if (SSL_connect(ssl) != 1)
+  {
     BIO_printf(outbio, "Error: Could not build a SSL session to: %s.\n", dest_url);
+  }
   else
+  {
     BIO_printf(outbio, "Successfully enabled SSL/TLS session to: %s.\n", dest_url);
+  }
 
   /* ---------------------------------------------------------- *
    * Get the remote certificate into the X509 structure         *
    * ---------------------------------------------------------- */
   cert = SSL_get_peer_certificate(ssl);
   if (cert == NULL)
+  {
     BIO_printf(outbio, "Error: Could not get a certificate from: %s.\n", dest_url);
+  }
   else
+  {
     BIO_printf(outbio, "Retrieved the server's certificate from: %s.\n", dest_url);
+  }
 
   /* ---------------------------------------------------------- *
    * extract various certificate information                    *
@@ -156,14 +170,16 @@ int main(int argc, char** argv)
 /* ---------------------------------------------------------- *
  * create_socket() creates the socket & TCP-connect to server *
  * ---------------------------------------------------------- */
-int create_socket(char *hostname, int port, BIO *out) {
+int create_socket(char *hostname, int port, BIO *out)
+{
   int sockfd;
   char      proto[6] = "";
   char      *tmp_ptr = NULL;
   struct hostent *host;
   struct sockaddr_in dest_addr;
 
-  if ( (host = gethostbyname(hostname)) == NULL ) {
+  if ( (host = gethostbyname(hostname)) == NULL )
+  {
     BIO_printf(out, "Error: Cannot resolve hostname %s.\n",  hostname);
     abort();
   }
@@ -187,8 +203,9 @@ int create_socket(char *hostname, int port, BIO *out) {
   /* ---------------------------------------------------------- *
    * Try to make the host connect here                          *
    * ---------------------------------------------------------- */
-  if ( connect(sockfd, (struct sockaddr *) &dest_addr,
-                              sizeof(struct sockaddr)) == -1 ) {
+  if (connect(sockfd, (struct sockaddr *) &dest_addr,
+                              sizeof(struct sockaddr)) == -1)
+  {
     BIO_printf(out, "Error: Cannot connect to host %s [%s] on port %d.\n",
              hostname, tmp_ptr, port);
   }
